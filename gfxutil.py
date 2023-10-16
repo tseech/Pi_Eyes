@@ -5,6 +5,7 @@ import math
 import pi3d
 from svg.path import parse_path
 
+
 def get_view_box(root):
     """Get artboard bounds (to use Illustrator terminology)
        from SVG DOM tree:"""
@@ -27,8 +28,8 @@ def get_path(root, path_name):
             path = get_path(node, path_name)
             if path:
                 return path
-            if((node.tagName.lower() == "path") and
-               (node.getAttribute("id") == path_name)):
+            if ((node.tagName.lower() == "path") and
+                    (node.getAttribute("id") == path_name)):
                 return parse_path(node.getAttribute("d"))
     return None
 
@@ -66,9 +67,9 @@ def scale_points(points, view_box, radius):
     """Scale a given 2D point list by normalizing to a given view box
        (returned by get_view_box()) then expanding to a given size
        centered on (0,0)."""
-    for point_num, _ in enumerate(points): # Index of each point in path
+    for point_num, _ in enumerate(points):  # Index of each point in path
         points[point_num] = (((points[point_num][0] - view_box[0]) /
-                              view_box[2] - 0.5) * radius *  2.0,
+                              view_box[2] - 0.5) * radius * 2.0,
                              ((points[point_num][1] - view_box[1]) /
                               view_box[3] - 0.5) * radius * -2.0)
 
@@ -127,12 +128,10 @@ def re_axis(shape, texture_offset):
         abuf[vertex_num][6] += texture_offset
 
 
-
 # Instead of making these so general-purpose, I might intentionally
 # rig them to specifically handle the iris (closed shape) and eyelid
 # (open shape) cases. Esp. since the iris is a weird case that'll need
 # 3 paths (edge, open and closed)
-
 
 
 def mesh_init(uv_steps, uv_offset, closed, lid):
@@ -151,7 +150,7 @@ def mesh_init(uv_steps, uv_offset, closed, lid):
         uv_steps = (uv_steps[0] + 1, uv_steps[1])
     uv_div = (float(uv_steps[0] - 1), float(uv_steps[1] - 1))
 
-    if lid: # Add extra row of vertices (with V=0) if eyelid
+    if lid:  # Add extra row of vertices (with V=0) if eyelid
         for u_pos in range(uv_steps[0]):
             verts.append((0, 0, 0))
             tex.append((u_pos / uv_div[0] + uv_offset[0], uv_offset[1]))
@@ -222,7 +221,7 @@ def zangle(points, eye_radius):
        that's lathed to form the sclera. Pass point list and eye radius."""
     xdist = points[0][0]
     ydist = points[0][1]
-    radius = math.sqrt(xdist * xdist + ydist * ydist) # R of SVG feature
+    radius = math.sqrt(xdist * xdist + ydist * ydist)  # R of SVG feature
     z_depth = math.sqrt(eye_radius * eye_radius - radius * radius)
     angle = math.atan2(radius, eye_radius) * 180.0 / math.pi
 

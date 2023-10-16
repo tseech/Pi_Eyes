@@ -100,14 +100,12 @@ echo "Updating package index files..."
 apt-get update
 
 echo "Installing Python libraries..."
-# WAS: apt-get install -y python3-pip python3-dev python3-pil python3-smbus libatlas-base-dev
-apt-get install -y python3-pip python3-dev python3-pil libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test
-# WAS: pip3 install numpy pi3d==2.34 svg.path rpi-gpio adafruit-blinka adafruit-circuitpython-ads1x15
-pip3 install numpy pi3d==2.34 svg.path rpi-gpio opencv-contrib-python imutils
+apt-get install -y python3-pip python3-dev python3-pil python3-opencv libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqt5gui5 libqt5test5
+pip3 install numpy pi3d svg.path imutils asyncio nats-py
 
-echo "Installing Adafruit code and data in /boot..."
+echo "Installing Pi Eyes code and data in /boot..."
 cd /tmp
-curl -LO https://github.com/PaulZC/Pi_Eyes/archive/master.zip
+curl -LO https://github.com/tseech/Pi_Eyes/archive/refs/heads/master.zip
 unzip master.zip
 # Moving between filesystems requires copy-and-delete:
 cp -r Pi_Eyes-master /boot/Pi_Eyes
@@ -118,7 +116,11 @@ rm -rf master.zip Pi_Eyes-master
 echo "Configuring system..."
 
 # Disable overscan compensation (use full screen):
-raspi-config nonint do_overscan 1
+raspi-config nonint do_overscan_kms 1 1
+raspi-config nonint do_overscan_kms 2 1
+raspi-config nonint do_blanking 1
+raspi-config nonint do_ssh 0
+raspi-config nonint do_vnc 0
 
 ## If rendering is slow at 1920x1080, uncomment the next four lines to default to 1280x720
 ## You will need to change the display size in the eye clients to match
@@ -130,35 +132,27 @@ raspi-config nonint do_overscan 1
 # Install eye_left_client.py, eye_right_client.py or eye_position_server.py
 if [ $CODE_SELECT -eq 1 ]; then
 	# Auto-start eye_left_client.py on boot
-	grep eye_left_client.py /etc/rc.local >/dev/null
+	grep eye_left_client.py /etc/xdg/lxsession/LXDE-pi/autostart >/dev/null
 	if [ $? -eq 0 ]; then
-		# eye_left_client.py already in rc.local, but make sure correct:
-		sed -i "s/^.*eye_left_client.py.*$/cd \/boot\/Pi_Eyes;python3 eye_left_client.py \&/g" /etc/rc.local >/dev/null
+		echo "Already added to autostart"
 	else
-		# Insert eye_left_client.py into rc.local before final 'exit 0'
-	sed -i "s/^exit 0/cd \/boot\/Pi_Eyes;python3 eye_left_client.py \&\\nexit 0/g" /etc/rc.local >/dev/null
+	  echo "@sh /boot/Pi_Eyes/scripts/run_right.sh" >> /etc/xdg/lxsession/LXDE-pi/autostart
 	fi
 elif [ $CODE_SELECT -eq 2 ]; then
 	# Auto-start eye_right_client.py on boot
 	grep eye_right_client.py /etc/rc.local >/dev/null
 	if [ $? -eq 0 ]; then
-		# eye_right_client.py already in rc.local, but make sure correct:
-		sed -i "s/^.*eye_right_client.py.*$/cd \/boot\/Pi_Eyes;python3 eye_right_client.py \&/g" /etc/rc.local >/dev/null
+		echo "Already added to autostart"
 	else
-		# Insert eye_right_client.py into rc.local before final 'exit 0'
-	sed -i "s/^exit 0/cd \/boot\/Pi_Eyes;python3 eye_right_client.py \&\\nexit 0/g" /etc/rc.local >/dev/null
+	  echo "@sh /boot/Pi_Eyes/scripts/run_left.sh" >> /etc/xdg/lxsession/LXDE-pi/autostart
 	fi
 else
 	# Auto-start eye_position_server.py on boot
 	grep eye_position_server.py /etc/rc.local >/dev/null
 	if [ $? -eq 0 ]; then
-		# eye_position_server.py already in rc.local, but make sure correct:
-		sed -i "s/^.*eye_position_server.py.*$/cd \/boot\/Pi_Eyes;python3 eye_position_server.py \&/g" /etc/rc.local >/dev/null
+		echo "Already added to autostart"
 	else
-		# Insert eye_position_server.py into rc.local before final 'exit 0'
-    # Temporary (?) fix for OpenCV
-    #sed -i "s/^exit 0/cd \/boot\/Pi_Eyes;python3 eye_position_server.py \&\\nexit 0/g" /etc/rc.local >/dev/null
-		sed -i "s/^exit 0/cd \/boot\/Pi_Eyes;LD_PRELOAD=\/usr\/lib\/arm-linux-gnueabihf\/libatomic.so.1 python3 eye_position_server.py \&\\nexit 0/g" /etc/rc.local >/dev/null
+		echo "@sh /boot/Pi_Eyes/scripts/run_server.sh" >> /etc/xdg/lxsession/LXDE-pi/autostart
 	fi
 fi
 
